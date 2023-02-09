@@ -36,8 +36,10 @@ You will be prompted for your password, which will be stored securely in your sy
 and use a headless (invisible) browser to log in and grab the account data.
 If this triggers an MFA prompt,
 you'll be prompted for the one-time code on the command line.
-MFA prompts default to SMS unless you specify `--mfa-method=email`.
-`mintapi` persists the browser session in $HOME/.mintapi/session to avoid an MFA in the future,
+MFA prompts default to SMS,
+and you can override this by passing in different MFA credentials (see MFA section).
+To avoid future MFA prompts,
+`mintapi` persists the browser session in `$HOME/.mintapi/session`
 unless you specify `--session-path=None`.
 
 To simplify CLI invocation,
@@ -64,15 +66,17 @@ Not only will it decrease your account security,
 but Mint will sometimes **still email you a second factor code**.
 So, for the least fragility, enable MFA.
 
-As of v2.0,
-the mfa_method parameter is only required when using soft-token,
-or if your login flow presents you with the option
-to select which Multifactor Authentication Method you wish to use.
-Prior to v2.0, `mfa_method` is always required.
+Passing `mfa_method` explicitly is depricated.
+Any attempts to do so will be silently ignored.
+Instead, pass the MFA credentials you wish to use.
+`mintapi` first checks if you passed IMAP credentials,
+then checks for a `soft-token`.
+If neither is present,
+`mfa_method` defaults to SMS.
+Prior to v2.0, `mfa_method` is required.
+<!-- when can we assume all users are on v2.0, and thus remove this message? -->
 
 #### Option 1: TOTP
-Set `mfa_method` to `soft-token`.
-
 Set `mfa_token` as follows:
 go to [your Mint settings](https://mint.intuit.com/settings.event?filter=all),
 navigate through *Intuit Account* -> *Sign In & Security* -> *Two-step verification*.
@@ -263,10 +267,6 @@ make calls to retrieve account/budget information.  We recommend using the
     'your_email@web.com',  # Email used to log in to Mint
     'password',  # Your password used to log in to mint
     # Optional parameters
-    mfa_method='sms',  # See MFA Methods section
-                       # Can be 'sms' (default), 'email', or 'soft-token'.
-                       # if mintapi detects an MFA request, it will trigger the requested method
-                       # and prompt on the command line.
     mfa_input_callback=None,  # see MFA Methods section
                               # can be used with any mfa_method
                               # A callback accepting a single argument (the prompt)
@@ -338,7 +338,7 @@ make calls to retrieve account/budget information.  We recommend using the
   mint = mintapi.Mint()
   mint.driver = Firefox()
   mint.status_message, mint.token = mintapi.sign_in(
-    email, password, mint.driver, mfa_method=None, mfa_token=None,
+    email, password, mint.driver, mfa_token=None,
     mfa_input_callback=None, intuit_account=None, wait_for_sync=True,
     wait_for_sync_timeout=5 * 60,
     imap_account=None, imap_password=None,
@@ -360,7 +360,6 @@ Run it as a sub-process from your favorite language; `pip install mintapi` creat
                    [--start-date [START_DATE]] [--end-date [END_DATE]]
                    [--limit] [--include-investment] [--show-pending]
                    [--format] [--filename FILENAME] [--keyring] [--headless]
-                   [--mfa-method {sms,email,soft-token}]
                    [--categories] [--attention]
                    [--transactions] [--transaction-date-filter]
                    [--trends] [--trend-report-type] [--trend-date-filter]
@@ -415,8 +414,6 @@ Run it as a sub-process from your favorite language; `pip install mintapi` creat
 	  --use-chromedriver-on-path
 	  						Whether to use the chromedriver on PATH, instead of
               			  	downloading a local copy.
-      --mfa-method {sms,email,soft-token}
-                            The MFA method to automate.
       --mfa-token      The base32 encoded MFA token.
       --imap-account IMAP_ACCOUNT
       --imap-password IMAP_PASSWORD
