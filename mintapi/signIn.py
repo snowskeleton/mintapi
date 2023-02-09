@@ -342,6 +342,14 @@ def sign_in(
     imap_folder="INBOX",
     beta=False,
 ):
+
+    if all([imap_account, imap_password, imap_server, imap_folder]):
+        mfa_method = constants.MFA_VIA_EMAIL
+    elif mfa_token is not None:
+        mfa_method = constants.MFA_VIA_SOFT_TOKEN
+    else:
+        mfa_method = constants.MFA_VIA_SMS
+
     if beta:
         url = constants.MINT_BETA_ROOT_URL
     else:
